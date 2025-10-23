@@ -23,3 +23,25 @@ go.work.sum
 
 # env file
 .env
+
+# Build artifacts
+bin/
+dist/
+
+# Coverage files
+*.out
+coverage.html
+
+# Generated data files
+*.csv
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
