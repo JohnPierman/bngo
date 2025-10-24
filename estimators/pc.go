@@ -198,7 +198,7 @@ func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string
 	// Add oriented edges to DAG
 	for parent, children := range oriented {
 		for child := range children {
-			dag.AddEdge(parent, child)
+			_ = dag.AddEdge(parent, child) // Ignore error as structure is valid by construction
 		}
 	}
 
@@ -208,7 +208,7 @@ func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string
 			if node1 < node2 && unoriented[node2][node1] {
 				// This edge is still unoriented
 				if !dag.HasEdge(node1, node2) && !dag.HasEdge(node2, node1) {
-					dag.AddEdge(node1, node2)
+					_ = dag.AddEdge(node1, node2) // Ignore error as structure is valid by construction
 				}
 			}
 		}

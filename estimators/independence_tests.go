@@ -86,7 +86,8 @@ func ChiSquareTest(data []map[string]int, x, y string, z []string, cardinality m
 				expected := xMarginal[i] * yMarginal[j] / totalCounts[k]
 				if expected > 0 {
 					observed := counts[i][j][k]
-					chiSquare += math.Pow(observed-expected, 2) / expected
+					diff := observed - expected
+					chiSquare += diff * diff / expected
 				}
 			}
 		}

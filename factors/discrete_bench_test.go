@@ -19,7 +19,7 @@ func BenchmarkFactorMultiply(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		factor1.Multiply(factor2)
+		_, _ = factor1.Multiply(factor2)
 	}
 }
 
@@ -32,7 +32,7 @@ func BenchmarkFactorMarginalize(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		factor.Marginalize([]string{"B"})
+		_, _ = factor.Marginalize([]string{"B"})
 	}
 }
 
@@ -47,7 +47,7 @@ func BenchmarkFactorReduce(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		factor.Reduce(evidence)
+		_, _ = factor.Reduce(evidence)
 	}
 }
 
@@ -77,7 +77,7 @@ func BenchmarkCPDToFactor(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cpd.ToFactor()
+		_, _ = cpd.ToFactor()
 	}
 }
 
@@ -105,6 +105,6 @@ func BenchmarkFactorMultiply_Large(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		factor1.Multiply(factor2)
+		_, _ = factor1.Multiply(factor2)
 	}
 }

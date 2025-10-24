@@ -21,7 +21,7 @@ func ExampleBayesianNetwork_Simulate() {
 		[]string{},
 		map[string]int{},
 	)
-	bn.AddCPD(cpdA)
+	_ = bn.AddCPD(cpdA)
 
 	cpdB, _ := factors.NewTabularCPD("B", 2,
 		[][]float64{
@@ -31,7 +31,7 @@ func ExampleBayesianNetwork_Simulate() {
 		[]string{"A"},
 		map[string]int{"A": 2},
 	)
-	bn.AddCPD(cpdB)
+	_ = bn.AddCPD(cpdB)
 
 	// Simulate data
 	samples, _ := bn.Simulate(5, 42)
@@ -78,7 +78,7 @@ func ExampleBayesianNetwork_Predict() {
 		[]string{},
 		map[string]int{},
 	)
-	bn.AddCPD(cpdA)
+	_ = bn.AddCPD(cpdA)
 
 	cpdB, _ := factors.NewTabularCPD("B", 2,
 		[][]float64{
@@ -88,7 +88,7 @@ func ExampleBayesianNetwork_Predict() {
 		[]string{"A"},
 		map[string]int{"A": 2},
 	)
-	bn.AddCPD(cpdB)
+	_ = bn.AddCPD(cpdB)
 
 	// Predict missing values
 	observations := []map[string]int{
@@ -133,7 +133,7 @@ func Example_inference() {
 		[]string{},
 		map[string]int{},
 	)
-	bn.AddCPD(cpdA)
+	_ = bn.AddCPD(cpdA)
 
 	cpdB, _ := factors.NewTabularCPD("B", 2,
 		[][]float64{
@@ -143,7 +143,7 @@ func Example_inference() {
 		[]string{"A"},
 		map[string]int{"A": 2},
 	)
-	bn.AddCPD(cpdB)
+	_ = bn.AddCPD(cpdB)
 
 	cpdC, _ := factors.NewTabularCPD("C", 2,
 		[][]float64{
@@ -153,7 +153,7 @@ func Example_inference() {
 		[]string{"B"},
 		map[string]int{"B": 2},
 	)
-	bn.AddCPD(cpdC)
+	_ = bn.AddCPD(cpdC)
 
 	// Perform inference
 	ve, _ := inference.NewVariableElimination(bn)

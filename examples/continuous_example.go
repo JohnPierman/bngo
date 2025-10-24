@@ -42,7 +42,9 @@ func GetHeightWeightModel() (*models.BayesianNetwork, error) {
 	if err != nil {
 		return nil, err
 	}
-	bn.AddCPD(cpdGender)
+	if err := bn.AddCPD(cpdGender); err != nil {
+		return nil, err
+	}
 
 	// CPD for Height given Gender
 	// Height | Female ~ N(64, 9)  (mean 64 inches, std 3 inches)
@@ -116,7 +118,9 @@ func GetTemperatureModel() (*models.BayesianNetwork, error) {
 	if err != nil {
 		return nil, err
 	}
-	bn.AddCPD(cpdSeason)
+	if err := bn.AddCPD(cpdSeason); err != nil {
+		return nil, err
+	}
 
 	// CPD for Temperature given Season
 	tempStates := map[string]factors.GaussianParams{
@@ -151,7 +155,9 @@ func GetTemperatureModel() (*models.BayesianNetwork, error) {
 	if err != nil {
 		return nil, err
 	}
-	bn.AddGaussianCPD(cpdSales)
+	if err := bn.AddGaussianCPD(cpdSales); err != nil {
+		return nil, err
+	}
 
 	return bn, nil
 }
@@ -182,7 +188,9 @@ func GetLinearChainModel() (*models.BayesianNetwork, error) {
 	if err != nil {
 		return nil, err
 	}
-	bn.AddGaussianCPD(cpd1)
+	if err := bn.AddGaussianCPD(cpd1); err != nil {
+		return nil, err
+	}
 
 	// X2 = 0.8*X1 + 0.5 + ε, ε ~ N(0, 0.5)
 	cpd2, err := factors.NewLinearGaussianCPD(
@@ -195,7 +203,9 @@ func GetLinearChainModel() (*models.BayesianNetwork, error) {
 	if err != nil {
 		return nil, err
 	}
-	bn.AddGaussianCPD(cpd2)
+	if err := bn.AddGaussianCPD(cpd2); err != nil {
+		return nil, err
+	}
 
 	// X3 = -0.5*X2 + 1.0 + ε, ε ~ N(0, 0.25)
 	cpd3, err := factors.NewLinearGaussianCPD(
@@ -208,7 +218,9 @@ func GetLinearChainModel() (*models.BayesianNetwork, error) {
 	if err != nil {
 		return nil, err
 	}
-	bn.AddGaussianCPD(cpd3)
+	if err := bn.AddGaussianCPD(cpd3); err != nil {
+		return nil, err
+	}
 
 	return bn, nil
 }

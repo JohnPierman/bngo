@@ -50,11 +50,11 @@ func BenchmarkBayesianNetworkSimulate(b *testing.B) {
 		[]string{"C"},
 		map[string]int{"C": 2},
 	)
-	bn.AddCPD(cpdD)
+	_ = bn.AddCPD(cpdD)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bn.Simulate(100, 42)
+		_, _ = bn.Simulate(100, 42)
 	}
 }
 
@@ -73,7 +73,7 @@ func BenchmarkBayesianNetworkFit(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		bn, _ := NewBayesianNetwork(edges)
-		bn.Fit(data)
+		_ = bn.Fit(data)
 	}
 }
 
@@ -105,6 +105,6 @@ func BenchmarkBayesianNetworkPredict(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bn.Predict(testData)
+		_, _ = bn.Predict(testData)
 	}
 }
