@@ -72,11 +72,11 @@ func GetStudentModel() (*models.BayesianNetwork, error) {
 		map[string]int{"Grade": 3},
 	)
 
-	bn.AddCPD(cpdD)
-	bn.AddCPD(cpdI)
-	bn.AddCPD(cpdG)
-	bn.AddCPD(cpdS)
-	bn.AddCPD(cpdL)
+	_ = bn.AddCPD(cpdD)
+	_ = bn.AddCPD(cpdI)
+	_ = bn.AddCPD(cpdG)
+	_ = bn.AddCPD(cpdS)
+	_ = bn.AddCPD(cpdL)
 
 	return bn, nil
 }
@@ -146,11 +146,11 @@ func GetAlarmModel() (*models.BayesianNetwork, error) {
 		map[string]int{"Alarm": 2},
 	)
 
-	bn.AddCPD(cpdB)
-	bn.AddCPD(cpdE)
-	bn.AddCPD(cpdA)
-	bn.AddCPD(cpdJ)
-	bn.AddCPD(cpdM)
+	_ = bn.AddCPD(cpdB)
+	_ = bn.AddCPD(cpdE)
+	_ = bn.AddCPD(cpdA)
+	_ = bn.AddCPD(cpdJ)
+	_ = bn.AddCPD(cpdM)
 
 	return bn, nil
 }
@@ -220,11 +220,11 @@ func GetCancerModel() (*models.BayesianNetwork, error) {
 		map[string]int{"Cancer": 2},
 	)
 
-	bn.AddCPD(cpdP)
-	bn.AddCPD(cpdS)
-	bn.AddCPD(cpdC)
-	bn.AddCPD(cpdX)
-	bn.AddCPD(cpdD)
+	_ = bn.AddCPD(cpdP)
+	_ = bn.AddCPD(cpdS)
+	_ = bn.AddCPD(cpdC)
+	_ = bn.AddCPD(cpdX)
+	_ = bn.AddCPD(cpdD)
 
 	return bn, nil
 }
@@ -285,10 +285,10 @@ func GetSprinklerModel() (*models.BayesianNetwork, error) {
 		map[string]int{"Sprinkler": 2, "Rain": 2},
 	)
 
-	bn.AddCPD(cpdC)
-	bn.AddCPD(cpdS)
-	bn.AddCPD(cpdR)
-	bn.AddCPD(cpdW)
+	_ = bn.AddCPD(cpdC)
+	_ = bn.AddCPD(cpdS)
+	_ = bn.AddCPD(cpdR)
+	_ = bn.AddCPD(cpdW)
 
 	return bn, nil
 }

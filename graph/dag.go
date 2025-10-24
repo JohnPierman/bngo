@@ -227,7 +227,7 @@ func (d *DAG) Copy() *DAG {
 	}
 	for parent, children := range d.edges {
 		for child := range children {
-			newDAG.AddEdge(parent, child)
+			_ = newDAG.AddEdge(parent, child) // Ignore error as structure is valid by construction
 		}
 	}
 	return newDAG

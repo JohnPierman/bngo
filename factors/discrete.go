@@ -298,11 +298,11 @@ func (f *DiscreteFactor) String() string {
 func (f *DiscreteFactor) stringHelper(depth int, assignment map[string]int, sb *strings.Builder) {
 	if depth == len(f.Variables) {
 		idx := f.projectAssignmentToIndex(assignment)
-		sb.WriteString(fmt.Sprintf("  "))
+		sb.WriteString("  ")
 		for _, v := range f.Variables {
-			sb.WriteString(fmt.Sprintf("%s=%d ", v, assignment[v]))
+			fmt.Fprintf(sb, "%s=%d ", v, assignment[v])
 		}
-		sb.WriteString(fmt.Sprintf("-> %.4f\n", f.Values[idx]))
+		fmt.Fprintf(sb, "-> %.4f\n", f.Values[idx])
 		return
 	}
 
