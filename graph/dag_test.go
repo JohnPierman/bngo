@@ -33,8 +33,8 @@ func TestDAGEdges(t *testing.T) {
 
 func TestDAGCycleDetection(t *testing.T) {
 	dag := NewDAG()
-	dag.AddEdge("A", "B")
-	dag.AddEdge("B", "C")
+	_ = dag.AddEdge("A", "B")
+	_ = dag.AddEdge("B", "C")
 
 	// Try to create a cycle
 	err := dag.AddEdge("C", "A")
@@ -45,8 +45,8 @@ func TestDAGCycleDetection(t *testing.T) {
 
 func TestDAGParentsChildren(t *testing.T) {
 	dag := NewDAG()
-	dag.AddEdge("A", "C")
-	dag.AddEdge("B", "C")
+	_ = dag.AddEdge("A", "C")
+	_ = dag.AddEdge("B", "C")
 
 	parents := dag.Parents("C")
 	if len(parents) != 2 {
@@ -61,9 +61,9 @@ func TestDAGParentsChildren(t *testing.T) {
 
 func TestDAGTopologicalSort(t *testing.T) {
 	dag := NewDAG()
-	dag.AddEdge("A", "C")
-	dag.AddEdge("B", "C")
-	dag.AddEdge("C", "D")
+	_ = dag.AddEdge("A", "C")
+	_ = dag.AddEdge("B", "C")
+	_ = dag.AddEdge("C", "D")
 
 	order, err := dag.TopologicalSort()
 	if err != nil {
@@ -90,9 +90,9 @@ func TestDAGTopologicalSort(t *testing.T) {
 
 func TestDAGAncestorsDescendants(t *testing.T) {
 	dag := NewDAG()
-	dag.AddEdge("A", "B")
-	dag.AddEdge("B", "C")
-	dag.AddEdge("C", "D")
+	_ = dag.AddEdge("A", "B")
+	_ = dag.AddEdge("B", "C")
+	_ = dag.AddEdge("C", "D")
 
 	ancestors := dag.Ancestors("D")
 	if len(ancestors) != 3 {

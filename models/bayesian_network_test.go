@@ -75,7 +75,7 @@ func TestBayesianNetworkSimulation(t *testing.T) {
 		[]string{},
 		map[string]int{},
 	)
-	bn.AddCPD(cpdA)
+	_ = bn.AddCPD(cpdA)
 
 	cpdB, _ := factors.NewTabularCPD("B", 2,
 		[][]float64{
@@ -85,7 +85,7 @@ func TestBayesianNetworkSimulation(t *testing.T) {
 		[]string{"A"},
 		map[string]int{"A": 2},
 	)
-	bn.AddCPD(cpdB)
+	_ = bn.AddCPD(cpdB)
 
 	samples, err := bn.Simulate(100, 42)
 	if err != nil {

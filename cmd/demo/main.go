@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("=== bngo: Bayesian Networks in Go ===\n")
+	fmt.Println("=== bngo: Bayesian Networks in Go ===")
 
 	// Example 1: Create and use the Student model
 	fmt.Println("Example 1: Student Bayesian Network")
