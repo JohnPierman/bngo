@@ -116,19 +116,19 @@ func (pc *PCEstimator) Estimate() (*graph.DAG, error) {
 
 	// Phase 2: Orient edges using v-structures and Meek rules
 	dag := pc.orientEdges(ug, sepSets)
-	
+
 	return dag, nil
 }
 
 // orientEdges converts undirected graph to PDAG/DAG using v-structures and Meek's rules
 func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string]map[string][]string) *graph.DAG {
 	dag := graph.NewDAG()
-	
+
 	// Add all nodes
 	for _, node := range ug.Nodes() {
 		dag.AddNode(node)
 	}
-	
+
 	// Track oriented and unoriented edges
 	oriented := make(map[string]map[string]bool)
 	unoriented := make(map[string]map[string]bool)
@@ -136,23 +136,23 @@ func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string
 		oriented[v] = make(map[string]bool)
 		unoriented[v] = make(map[string]bool)
 	}
-	
+
 	// Initialize all edges as unoriented
 	for _, edge := range ug.Edges() {
 		node1, node2 := edge[0], edge[1]
 		unoriented[node1][node2] = true
 		unoriented[node2][node1] = true
 	}
-	
+
 	// Rule 0: Find v-structures: X -> Z <- Y where X and Y are not adjacent
 	for _, z := range pc.Variables {
 		neighbors := ug.Neighbors(z)
-		
+
 		for i := 0; i < len(neighbors); i++ {
 			for j := i + 1; j < len(neighbors); j++ {
 				x := neighbors[i]
 				y := neighbors[j]
-				
+
 				// Check if X and Y are not adjacent
 				if !ug.HasEdge(x, y) {
 					// Check if Z is not in the separating set of X and Y
@@ -164,7 +164,7 @@ func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string
 							break
 						}
 					}
-					
+
 					if !zInSepSet {
 						// Orient X -> Z <- Y
 						pc.orientEdge(x, z, oriented, unoriented)
@@ -174,34 +174,34 @@ func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string
 			}
 		}
 	}
-	
+
 	// Apply Meek's rules iteratively until no more edges can be oriented
 	changed := true
 	for changed {
 		changed = false
-		
+
 		// Rule 1: Orient i - j into i -> j whenever there is k -> i such that k and j are not adjacent
 		changed = pc.applyMeekRule1(ug, oriented, unoriented) || changed
-		
+
 		// Rule 2: Orient i - j into i -> j whenever there is a chain i -> k -> j
 		changed = pc.applyMeekRule2(oriented, unoriented) || changed
-		
+
 		// Rule 3: Orient i - j into i -> j whenever there are two chains i - k -> j and i - l -> j
 		// such that k and l are not adjacent
 		changed = pc.applyMeekRule3(ug, oriented, unoriented) || changed
-		
+
 		// Rule 4: Orient i - j into i -> j whenever there are two chains i - k -> l and k -> l -> j
 		// such that k and j are not adjacent
 		changed = pc.applyMeekRule4(ug, oriented, unoriented) || changed
 	}
-	
+
 	// Add oriented edges to DAG
 	for parent, children := range oriented {
 		for child := range children {
 			dag.AddEdge(parent, child)
 		}
 	}
-	
+
 	// Orient remaining unoriented edges arbitrarily (lexicographic order to ensure consistency)
 	for node1, neighbors := range unoriented {
 		for node2 := range neighbors {
@@ -213,7 +213,7 @@ func (pc *PCEstimator) orientEdges(ug *graph.UndirectedGraph, sepSets map[string
 			}
 		}
 	}
-	
+
 	return dag
 }
 
@@ -227,13 +227,13 @@ func (pc *PCEstimator) orientEdge(parent, child string, oriented, unoriented map
 // applyMeekRule1: Orient i - j into i -> j whenever there is k -> i such that k and j are not adjacent
 func (pc *PCEstimator) applyMeekRule1(ug *graph.UndirectedGraph, oriented, unoriented map[string]map[string]bool) bool {
 	changed := false
-	
+
 	for i, neighbors := range unoriented {
 		for j := range neighbors {
 			if !unoriented[j][i] {
 				continue // Already oriented
 			}
-			
+
 			// Look for k -> i where k and j are not adjacent
 			for k := range oriented {
 				if oriented[k][i] && !ug.HasEdge(k, j) && k != j {
@@ -244,20 +244,20 @@ func (pc *PCEstimator) applyMeekRule1(ug *graph.UndirectedGraph, oriented, unori
 			}
 		}
 	}
-	
+
 	return changed
 }
 
 // applyMeekRule2: Orient i - j into i -> j whenever there is a chain i -> k -> j
 func (pc *PCEstimator) applyMeekRule2(oriented, unoriented map[string]map[string]bool) bool {
 	changed := false
-	
+
 	for i, neighbors := range unoriented {
 		for j := range neighbors {
 			if !unoriented[j][i] {
 				continue // Already oriented
 			}
-			
+
 			// Look for i -> k -> j
 			for k := range oriented[i] {
 				if oriented[k][j] && k != j {
@@ -268,7 +268,7 @@ func (pc *PCEstimator) applyMeekRule2(oriented, unoriented map[string]map[string
 			}
 		}
 	}
-	
+
 	return changed
 }
 
@@ -276,13 +276,13 @@ func (pc *PCEstimator) applyMeekRule2(oriented, unoriented map[string]map[string
 // such that k and l are not adjacent
 func (pc *PCEstimator) applyMeekRule3(ug *graph.UndirectedGraph, oriented, unoriented map[string]map[string]bool) bool {
 	changed := false
-	
+
 	for i, neighbors := range unoriented {
 		for j := range neighbors {
 			if !unoriented[j][i] {
 				continue // Already oriented
 			}
-			
+
 			// Find all k where i - k -> j
 			candidates := make([]string, 0)
 			for k := range unoriented[i] {
@@ -290,7 +290,7 @@ func (pc *PCEstimator) applyMeekRule3(ug *graph.UndirectedGraph, oriented, unori
 					candidates = append(candidates, k)
 				}
 			}
-			
+
 			// Check if any pair of candidates are not adjacent
 			for idx1 := 0; idx1 < len(candidates); idx1++ {
 				for idx2 := idx1 + 1; idx2 < len(candidates); idx2++ {
@@ -308,7 +308,7 @@ func (pc *PCEstimator) applyMeekRule3(ug *graph.UndirectedGraph, oriented, unori
 			}
 		}
 	}
-	
+
 	return changed
 }
 
@@ -316,13 +316,13 @@ func (pc *PCEstimator) applyMeekRule3(ug *graph.UndirectedGraph, oriented, unori
 // such that k and j are not adjacent
 func (pc *PCEstimator) applyMeekRule4(ug *graph.UndirectedGraph, oriented, unoriented map[string]map[string]bool) bool {
 	changed := false
-	
+
 	for i, neighbors := range unoriented {
 		for j := range neighbors {
 			if !unoriented[j][i] {
 				continue // Already oriented
 			}
-			
+
 			// Look for i - k -> l -> j where k and j are not adjacent
 			for k := range unoriented[i] {
 				if !ug.HasEdge(k, j) && k != j {
@@ -340,7 +340,7 @@ func (pc *PCEstimator) applyMeekRule4(ug *graph.UndirectedGraph, oriented, unori
 			}
 		}
 	}
-	
+
 	return changed
 }
 

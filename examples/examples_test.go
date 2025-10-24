@@ -12,14 +12,14 @@ func ExampleGetStudentModel() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	fmt.Printf("Nodes: %d\n", len(bn.Nodes()))
 	fmt.Printf("Edges: %d\n", len(bn.Edges()))
-	
+
 	// Simulate some data
 	samples, _ := bn.Simulate(10, 42)
 	fmt.Printf("Generated %d samples\n", len(samples))
-	
+
 	// Output:
 	// Nodes: 5
 	// Edges: 4
@@ -32,14 +32,14 @@ func ExampleGetAlarmModel() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	// Check the structure
 	fmt.Printf("Network has %d variables\n", len(bn.Nodes()))
-	
+
 	// Get a CPD
 	alarmCPD, _ := bn.GetCPD("Alarm")
 	fmt.Printf("Alarm has %d states\n", alarmCPD.VariableCard)
-	
+
 	// Output:
 	// Network has 5 variables
 	// Alarm has 2 states
@@ -51,9 +51,9 @@ func ExampleGetCancerModel() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	fmt.Printf("Cancer network nodes: %d\n", len(bn.Nodes()))
-	
+
 	// Output:
 	// Cancer network nodes: 5
 }
@@ -64,12 +64,11 @@ func ExampleGetSprinklerModel() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	// Simulate data
 	samples, _ := bn.Simulate(100, 123)
 	fmt.Printf("Simulated %d samples from Sprinkler network\n", len(samples))
-	
+
 	// Output:
 	// Simulated 100 samples from Sprinkler network
 }
-
