@@ -355,9 +355,13 @@ bngo provides similar functionality to pgmpy but with Go's advantages:
 
 ## Implementation Notes
 
-### Discrete Variables
+### Variable Types
 
-Currently, bngo focuses on discrete Bayesian Networks where all variables have finite cardinality. Variables are represented as integers (0, 1, 2, ...).
+bngo supports both **discrete** and **continuous** variables:
+
+- **Discrete Variables**: Finite cardinality, represented as integers (0, 1, 2, ...)
+- **Continuous Variables**: Real-valued, modeled using Linear Gaussian distributions
+
 
 ### Independence Tests
 
@@ -412,7 +416,9 @@ Areas for contribution:
 
 ## Roadmap
 
-- [ ] Continuous variable support
+- [x] Continuous variable support (Linear Gaussian models)
+- [x] Mixed discrete/continuous networks
+- [ ] Exact inference for mixed networks
 - [ ] Belief Propagation inference
 - [ ] MCMC sampling methods
 - [ ] Additional structure learning algorithms
