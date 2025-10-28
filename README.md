@@ -85,6 +85,7 @@ fmt.Printf("First sample: %v\n", samples[0])
 
 ### Probabilistic Inference
 
+**Discrete Inference**
 ```go
 import "github.com/JohnPierman/bngo/inference"
 
@@ -97,6 +98,27 @@ result, _ := ve.Query([]string{"Rain"}, evidence)
 
 fmt.Printf("P(Rain=0 | WetGrass=1) = %.4f\n", result.Values[0])
 fmt.Printf("P(Rain=1 | WetGrass=1) = %.4f\n", result.Values[1])
+```
+
+**Mixed Inference (Discrete + Continuous)**
+```go
+// Create mixed inference engine for networks with both discrete and continuous variables
+mve, _ := inference.NewMixedVariableElimination(bn)
+
+// Define mixed evidence (can include both discrete and continuous observations)
+evidence := inference.MixedEvidence{
+    Discrete:   map[string]int{"Cloudy": 1},
+    Continuous: map[string]float64{"Temperature": 72.5},
+}
+
+// Query discrete variables
+discreteResult, _ := mve.Query([]string{"Rain"}, []string{}, evidence)
+fmt.Printf("P(Rain=1) = %.4f\n", discreteResult.Values[1])
+
+// Query continuous variables  
+continuousResult, _ := mve.Query([]string{}, []string{"Humidity"}, evidence)
+fmt.Printf("E[Humidity] = %.4f\n", continuousResult.Mean["Humidity"])
+fmt.Printf("Var[Humidity] = %.4f\n", continuousResult.Covariance["Humidity"]["Humidity"])
 ```
 
 ### Structure Learning
@@ -250,11 +272,22 @@ reduced, _ := factor1.Reduce(evidence)
 
 ### Inference
 
-**Variable Elimination**
+**Variable Elimination (Discrete)**
 - Exact inference for discrete Bayesian Networks
 - Posterior probability queries
 - MAP (Maximum A Posteriori) queries
 - Evidence handling
+
+**Mixed Variable Elimination (Discrete + Continuous)**
+- Exact inference for Conditional Linear Gaussian (CLG) models
+- Handles both discrete and continuous variables
+- Supports mixed evidence (discrete and continuous observations)
+- Works for:
+  - Purely discrete networks (uses discrete variable elimination)
+  - Purely continuous networks (uses Gaussian inference)
+  - Mixed networks (uses CLG algorithms)
+- Returns Gaussian distributions for continuous variables
+- Returns discrete distributions for discrete variables
 
 ### Structure Learning
 
@@ -418,7 +451,7 @@ Areas for contribution:
 
 - [x] Continuous variable support (Linear Gaussian models)
 - [x] Mixed discrete/continuous networks
-- [ ] Exact inference for mixed networks
+- [x] Exact inference for mixed networks
 - [ ] Belief Propagation inference
 - [ ] MCMC sampling methods
 - [ ] Additional structure learning algorithms
