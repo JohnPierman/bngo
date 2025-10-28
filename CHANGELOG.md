@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+  - Mixed evidence (combining discrete and continuous observations)
+  - Automatic routing to appropriate algorithm (discrete, continuous, or mixed)
+  - Returns Gaussian distributions for continuous variables
+  - Comprehensive test suite for mixed inference scenarios
 - Initial release of bngo
 - Core graph structures (DAG, undirected graphs)
 - Discrete factor operations
@@ -42,14 +46,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Bayesian Networks
 - Network definition with edges and CPDs
+- Support for both discrete and continuous variables
+- Conditional Linear Gaussian (CLG) models
 - Model validation
-- Data simulation
+- Data simulation (discrete and mixed)
 - Parameter learning (MLE with Laplace smoothing)
 - Prediction for missing values
-- Full inference integration
+- Full inference integration (discrete and mixed)
 
 #### Inference
 - Variable Elimination (exact inference)
+- Mixed Variable Elimination (discrete + continuous)
+  - Supports Conditional Linear Gaussian (CLG) models
+  - Handles mixed evidence (discrete and continuous observations)
+  - Automatic algorithm selection based on variable types
+  - Returns both discrete and Gaussian distributions
 - Posterior probability queries
 - MAP (Maximum A Posteriori) queries
 - Evidence conditioning
