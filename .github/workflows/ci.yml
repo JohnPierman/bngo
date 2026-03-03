@@ -76,3 +76,6 @@ jobs:
     - name: Run demo
       run: go run cmd/demo/main.go
 
+    - name: Run continuous demo
+      run: go run cmd/demo_continuous/main.go
+

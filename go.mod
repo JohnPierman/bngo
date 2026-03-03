@@ -1,3 +1,3 @@
 module github.com/JohnPierman/bngo
 
-go 1.23.1
+go 1.21
