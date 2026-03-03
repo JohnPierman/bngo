@@ -99,6 +99,30 @@ fmt.Printf("P(Rain=0 | WetGrass=1) = %.4f\n", result.Values[0])
 fmt.Printf("P(Rain=1 | WetGrass=1) = %.4f\n", result.Values[1])
 ```
 
+### Mixed Network Inference
+
+```go
+import "github.com/JohnPierman/bngo/inference"
+
+// Create mixed inference engine (works with discrete, continuous, or mixed networks)
+mve, _ := inference.NewMixedVariableElimination(bn)
+
+// Query continuous variable given discrete evidence
+result, _ := mve.QueryContinuous(
+    []string{"Temperature"},
+    inference.MixedEvidence{Discrete: map[string]int{"Season": 2}}, // Summer
+)
+fmt.Printf("E[Temperature | Summer] = %.2f\n", result.Mean["Temperature"])
+fmt.Printf("Var[Temperature | Summer] = %.2f\n", result.Covariance["Temperature"]["Temperature"])
+
+// Query discrete variable given continuous evidence (Bayesian updating)
+posterior, _ := mve.QueryDiscrete(
+    []string{"Season"},
+    inference.MixedEvidence{Continuous: map[string]float64{"Temperature": 85.0}},
+)
+fmt.Printf("P(Season | Temp=85) = %v\n", posterior.Values)
+```
+
 ### Structure Learning
 
 ```go
@@ -256,6 +280,13 @@ reduced, _ := factor1.Reduce(evidence)
 - MAP (Maximum A Posteriori) queries
 - Evidence handling
 
+**Mixed Variable Elimination**
+- Exact inference for mixed discrete/continuous networks (CLG models)
+- Query continuous variables given discrete and/or continuous evidence
+- Query discrete variables given continuous evidence (Bayesian updating)
+- Builds joint Gaussian distributions conditioned on discrete configurations
+- Moment-matched mixture approximation when hidden discrete variables exist
+
 ### Structure Learning
 
 **PC Algorithm**
@@ -371,7 +402,11 @@ bngo supports both **discrete** and **continuous** variables:
 
 ### Inference Algorithms
 
-- **Variable Elimination**: Exact inference by eliminating variables one by one
+- **Variable Elimination**: Exact inference for discrete networks by eliminating variables one by one
+- **Mixed Variable Elimination**: Exact inference for CLG (Conditional Linear Gaussian) models
+  - Enumerates discrete configurations, builds joint Gaussians, and computes weighted results
+  - Supports continuous queries with discrete/continuous evidence
+  - Supports discrete queries with continuous evidence via likelihood weighting
 - Elimination order uses a simple heuristic (can be improved for better performance)
 
 ### Structure Learning
@@ -418,7 +453,7 @@ Areas for contribution:
 
 - [x] Continuous variable support (Linear Gaussian models)
 - [x] Mixed discrete/continuous networks
-- [ ] Exact inference for mixed networks
+- [x] Exact inference for mixed networks
 - [ ] Belief Propagation inference
 - [ ] MCMC sampling methods
 - [ ] Additional structure learning algorithms

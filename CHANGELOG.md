@@ -53,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Posterior probability queries
 - MAP (Maximum A Posteriori) queries
 - Evidence conditioning
+- Mixed Variable Elimination for CLG (Conditional Linear Gaussian) models
+- Continuous variable queries with discrete/continuous evidence
+- Discrete variable queries with continuous evidence (Bayesian updating)
+- Joint Gaussian construction from Linear Gaussian CPDs
+- Moment-matched Gaussian mixture approximation for hidden discrete variables
 
 #### Structure Learning
 - PC algorithm with constraint-based learning

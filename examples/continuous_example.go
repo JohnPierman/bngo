@@ -12,18 +12,14 @@ import (
 //
 // Network structure:
 //
-//	Gender -> Height
-//	Gender -> Weight
-//	Height -> Weight
+//	Gender -> Height -> Weight
 //
 // Gender: 0 = Female, 1 = Male
-// Height: in inches, modeled as Gaussian
-// Weight: in pounds, modeled as linear function of height
+// Height: in inches, modeled as Gaussian conditioned on Gender
+// Weight: in pounds, modeled as linear function of Height
 func GetHeightWeightModel() (*models.BayesianNetwork, error) {
-	// Define structure
 	edges := [][2]string{
 		{"Gender", "Height"},
-		{"Gender", "Weight"},
 		{"Height", "Weight"},
 	}
 
@@ -66,11 +62,8 @@ func GetHeightWeightModel() (*models.BayesianNetwork, error) {
 		return nil, err
 	}
 
-	// CPD for Weight given Gender and Height
-	// This would ideally depend on both, but for simplicity we'll make it
-	// depend primarily on Height with different intercepts for Gender
-	// For now, simplified: Weight = 3*Height - 100 + noise
-	// In a full implementation, we'd want different parameters per gender
+	// CPD for Weight given Height: Weight = 3*Height - 100 + noise
+	// Gender's influence on Weight flows indirectly through Height.
 	cpdWeight, err := factors.NewLinearGaussianCPD(
 		"Weight",
 		[]string{"Height"},

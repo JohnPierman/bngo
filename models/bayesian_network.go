@@ -18,7 +18,9 @@ type DiscreteFactor = factors.DiscreteFactor
 type VariableType string
 
 const (
-	Discrete   VariableType = "discrete"
+	// Discrete indicates a variable with a finite set of categorical states.
+	Discrete VariableType = "discrete"
+	// Continuous indicates a variable modeled by a continuous (Gaussian) distribution.
 	Continuous VariableType = "continuous"
 )
 
