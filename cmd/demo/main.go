@@ -28,6 +28,11 @@ func main() {
 	fmt.Println("Example 3: Structure Learning with PC Algorithm")
 	structureLearningExample()
 	fmt.Println()
+
+	// Example 4: Score based structure learning
+	fmt.Println("Example 4: Score Based Structure Learning")
+	scoreBasedLearningExample()
+	fmt.Println()
 }
 
 func studentExample() {
@@ -182,4 +187,59 @@ func structureLearningExample() {
 	} else {
 		fmt.Println("Saved data to sprinkler_data.csv")
 	}
+}
+
+func scoreBasedLearningExample() {
+	bn, err := examples.GetAlarmModel()
+	if err != nil {
+		fmt.Printf("Error creating model: %v\n", err)
+		return
+	}
+
+	samples, err := bn.Simulate(20000, 789)
+	if err != nil {
+		fmt.Printf("Error simulating: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Original structure: %v\n", bn.Edges())
+
+	// Score the true structure, for something to compare the learned ones against
+	bic := estimators.NewBIC(samples, nil)
+	truth, err := estimators.ScoreDAG(bn.DAG, bic)
+	if err != nil {
+		fmt.Printf("Error scoring: %v\n", err)
+		return
+	}
+	fmt.Printf("BIC of the true structure: %.2f\n", truth)
+
+	// Greedy hill climbing over every candidate edge
+	climbed, err := estimators.NewHillClimb(samples, nil).Estimate()
+	if err != nil {
+		fmt.Printf("Error learning structure: %v\n", err)
+		return
+	}
+	climbedScore, err := estimators.ScoreDAG(climbed, bic)
+	if err != nil {
+		fmt.Printf("Error scoring: %v\n", err)
+		return
+	}
+	fmt.Printf("Hill climbing learned: %v (BIC %.2f)\n", climbed.Edges(), climbedScore)
+
+	// MMHC narrows the candidate parents first, then searches within them
+	mmhc := estimators.NewMMHC(samples, nil)
+	skeleton := mmhc.LearnSkeleton()
+	fmt.Printf("MMPC skeleton: %v\n", skeleton.Edges())
+
+	hybrid, err := mmhc.Estimate()
+	if err != nil {
+		fmt.Printf("Error learning structure: %v\n", err)
+		return
+	}
+	hybridScore, err := estimators.ScoreDAG(hybrid, bic)
+	if err != nil {
+		fmt.Printf("Error scoring: %v\n", err)
+		return
+	}
+	fmt.Printf("MMHC learned: %v (BIC %.2f)\n", hybrid.Edges(), hybridScore)
 }
