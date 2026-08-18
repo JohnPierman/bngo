@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite
 - Example application demonstrating all features
 - Full documentation (README, IMPLEMENTATION guide)
+- Support for non-numerical fields: categorical and binary variables carry labels
+- `categorical` package with the `StateNames` and `Codebook` value objects
+- Label valued CSV loading with configurable missing value markers
+- Label aware fitting, simulation, prediction and inference on `BayesianNetwork`
+- Labelled query results via `inference.QueryLabeled` and `inference.MAPLabeled`
 
 ### Features
 
@@ -70,6 +75,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DataFrame for data handling
 - CSV import/export
 - Data type conversions
+
+#### Categorical and Binary Fields
+- `categorical.StateNames`: an ordered, immutable set of labels for one field,
+  validating that labels are non-empty and unique
+- `categorical.Codebook`: one `StateNames` per variable, encoding and decoding
+  whole rows between labels and integer states
+- Deterministic label ordering, so the same data always encodes to the same
+  integers: recognised binary pairs (`no`/`yes`, `false`/`true`, `0`/`1`,
+  `off`/`on`, `absent`/`present`, ...) are ordered negative first so the positive
+  state is state 1; all numeric labels sort numerically (`2` before `10`);
+  anything else sorts lexicographically
+- An empty field counts as unobserved rather than as a state of its own, and
+  `NA` and `?` stay ordinary labels unless configured as missing markers
+- `utils.CategoricalFrame`, `utils.LoadCategoricalCSV` and
+  `utils.LoadCategoricalCSVWithOptions` for label valued CSV files
+- `BayesianNetwork.DeclareStates`, `AddCategoricalCPD`, `FitCategorical`,
+  `SimulateCategorical`, `PredictCategorical` and `ValidateCodebook`
+- `AddCategoricalCPD` takes cardinalities from the declared states, so defining a
+  CPD no longer needs a hand written cardinality map
+- Parameter learning honours declared cardinalities, so a state that never occurs
+  in the sample keeps its column in the CPD instead of being dropped
+- `inference.LabeledDistribution` with `MostLikely`, `Probability` and `String`
+- `examples.GetWeatherModel` and `examples.DemonstrateCategoricalNetwork`, a
+  labelled network mixing a three state categorical field with two binary fields
 
 ## [0.1.0] - 2025-10-23
 

@@ -15,6 +15,7 @@
 | **Simulations** | Generate synthetic data from Bayesian Networks |
 | **Prediction** | Predict missing values in partial observations |
 | **Causal Models** | Support for directed acyclic graphs (DAGs) and causal reasoning |
+| **Categorical & Binary Fields** | Learn from and query label valued data (`"sunny"`, `"yes"`) instead of state indices |
 
 ## Installation
 
@@ -169,10 +170,84 @@ fmt.Printf("Predicted Rain: %v\n", predictions["Rain"])
 fmt.Printf("Predicted Sprinkler: %v\n", predictions["Sprinkler"])
 ```
 
+### Categorical and Binary Fields
+
+Data rarely arrives as state indices. Declare the labels of each field and the
+whole workflow speaks in them: fitting, simulation, prediction and inference.
+
+```go
+import (
+    "github.com/JohnPierman/bngo/inference"
+    "github.com/JohnPierman/bngo/models"
+    "github.com/JohnPierman/bngo/utils"
+)
+
+// Read a CSV whose fields are labels rather than integers
+frame, _ := utils.LoadCategoricalCSV("weather.csv")
+
+bn, _ := models.NewBayesianNetwork([][2]string{
+    {"Weather", "Sprinkler"},
+    {"Weather", "WetGrass"},
+    {"Sprinkler", "WetGrass"},
+})
+
+// Declaring states up front fixes their order, and keeps a label that happens to
+// be absent from the sample from being dropped
+_ = bn.DeclareStates("Weather", []string{"cloudy", "rainy", "sunny"})
+
+// Learn every CPD straight from the labels
+_ = bn.FitCategorical(frame.Rows)
+
+// Ask the question in the vocabulary of the data
+ve, _ := inference.NewVariableElimination(bn)
+result, _ := ve.QueryLabeled([]string{"WetGrass"}, map[string]string{"Weather": "rainy"})
+fmt.Print(result)
+// P(WetGrass)
+//   WetGrass=no -> 0.1905
+//   WetGrass=yes -> 0.8095
+
+best, _ := result.MostLikely()
+fmt.Println(best.Labels["WetGrass"]) // yes
+```
+
+States can also be declared without touching a CSV, and CPDs then take their
+cardinality from the declared labels instead of a hand written map:
+
+```go
+_ = bn.DeclareStates("Sprinkler", []string{"off", "on"})
+_ = bn.AddCategoricalCPD("Sprinkler", []string{"Weather"}, [][]float64{
+    {0.60, 0.40}, // cloudy
+    {0.95, 0.05}, // rainy
+    {0.30, 0.70}, // sunny
+})
+```
+
+**Label ordering** is deterministic, so the same data always encodes to the same
+integers:
+
+1. A recognised binary pair (`no`/`yes`, `false`/`true`, `0`/`1`, `off`/`on`,
+   `absent`/`present`, ...) is ordered negative first, so the positive state is
+   always state 1.
+2. Labels that all parse as numbers sort numerically, so `2` comes before `10`.
+3. Anything else sorts lexicographically.
+
+An empty CSV field means *not observed* rather than a state of its own, and the
+parameter learners skip it. Markers such as `NA` and `?` are kept as ordinary
+labels unless you list them explicitly:
+
+```go
+options := utils.DefaultCSVOptions()
+options.MissingMarkers = []string{"", "NA", "?"}
+frame, _ := utils.LoadCategoricalCSVWithOptions("data.csv", options)
+```
+
 ## Package Structure
 
 ```
 bngo/
+├── categorical/        # Labels of categorical and binary fields
+│   ├── state_names.go
+│   └── codebook.go
 ├── graph/              # Graph data structures (DAG, undirected graphs)
 │   ├── dag.go
 │   └── undirected.go
@@ -180,14 +255,17 @@ bngo/
 │   ├── discrete.go
 │   └── cpd.go
 ├── models/             # Bayesian Network models
-│   └── bayesian_network.go
+│   ├── bayesian_network.go
+│   └── categorical.go
 ├── inference/          # Inference algorithms
-│   └── variable_elimination.go
+│   ├── variable_elimination.go
+│   └── labeled.go
 ├── estimators/         # Structure and parameter learning
 │   ├── pc.go
 │   └── independence_tests.go
 ├── utils/              # Utility functions
-│   └── data.go
+│   ├── data.go
+│   └── categorical_data.go
 └── examples/           # Example models and usage
     ├── example_models.go
     └── main.go
@@ -392,6 +470,9 @@ bngo supports both **discrete** and **continuous** variables:
 
 - **Discrete Variables**: Finite cardinality, represented as integers (0, 1, 2, ...)
 - **Continuous Variables**: Real-valued, modeled using Linear Gaussian distributions
+- **Categorical and Binary Fields**: Discrete variables whose states carry labels.
+  The labels live in a codebook next to the model, so the factor algebra keeps
+  working in integer states while the API accepts and returns labels.
 
 
 ### Independence Tests
@@ -454,6 +535,7 @@ Areas for contribution:
 - [x] Continuous variable support (Linear Gaussian models)
 - [x] Mixed discrete/continuous networks
 - [x] Exact inference for mixed networks
+- [x] Categorical and binary field support (label valued data)
 - [ ] Belief Propagation inference
 - [ ] MCMC sampling methods
 - [ ] Additional structure learning algorithms

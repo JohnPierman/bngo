@@ -72,3 +72,35 @@ func ExampleGetSprinklerModel() {
 	// Output:
 	// Simulated 100 samples from Sprinkler network
 }
+
+// ExampleGetWeatherModel demonstrates a network whose fields are labelled rather
+// than numbered, mixing a three state categorical field with two binary fields.
+func ExampleGetWeatherModel() {
+	bn, err := GetWeatherModel()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	weather, _ := bn.StateNames("Weather")
+	fmt.Printf("Weather states: %v\n", weather.Labels())
+
+	// Simulate labelled rows and predict a missing field from labelled evidence
+	samples, err := bn.SimulateCategorical(100, 42)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Simulated %d labelled rows\n", len(samples))
+
+	predictions, err := bn.PredictCategorical([]map[string]string{
+		{"Weather": "rainy", "Sprinkler": "off"},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("WetGrass when rainy: %s\n", predictions["WetGrass"][0])
+
+	// Output:
+	// Weather states: [cloudy rainy sunny]
+	// Simulated 100 labelled rows
+	// WetGrass when rainy: yes
+}

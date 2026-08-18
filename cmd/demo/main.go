@@ -28,6 +28,11 @@ func main() {
 	fmt.Println("Example 3: Structure Learning with PC Algorithm")
 	structureLearningExample()
 	fmt.Println()
+
+	// Example 4: Categorical and binary fields
+	fmt.Println("Example 4: Categorical and Binary Fields")
+	examples.DemonstrateCategoricalNetwork()
+	fmt.Println()
 }
 
 func studentExample() {
