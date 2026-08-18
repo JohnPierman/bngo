@@ -81,8 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restricting the search is what suits MMHC to large networks. Measured on a sparse
   synthetic network of binary variables over 2000 rows, MMHC overtakes unrestricted
   hill climbing at around a hundred variables: at 160 variables it takes 43 s against
-  2 min 10 s, and at 240 variables 1 min 8 s. Below that size hill climbing is faster,
-  and the more accurate of the two throughout
+  2 min 10 s, and at 240 variables 1 min 8 s against 9 min 53 s. Below that size hill
+  climbing is faster, and the more accurate of the two throughout
 
 #### Network Scores
 - `NewBIC` and `NewAIC`: log likelihood penalised per free parameter

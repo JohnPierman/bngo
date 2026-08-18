@@ -218,12 +218,13 @@ depends on the two before it, 2000 rows, binary variables:
 | 80  | -        | 8.6 s  | 16.4 s |
 | 120 | -        | 41.1 s | 29.2 s |
 | 160 | -        | 2 m 10 s | 42.7 s |
-| 240 | -        | -      | 1 m 8 s |
+| 240 | -        | 9 m 53 s | 1 m 8 s |
 
 Hill climbing is the faster choice up to about a hundred variables, and the more
 accurate one throughout: on these runs it recovered 94-98% of the true edges against
 85-91% for MMHC. Past roughly a hundred variables the O(n^2) candidate changes of an
-unrestricted step start to dominate, MMHC overtakes it, and the gap keeps widening.
+unrestricted step start to dominate, MMHC overtakes it, and the gap keeps widening:
+by 240 variables MMHC is nearly nine times faster.
 MMHC is also the more cautious of the two, reporting essentially no edge that is not
 in the true network. PC was left out above 25 variables because it was already slower
 than either at that size, and less accurate.
