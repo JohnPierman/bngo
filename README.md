@@ -9,7 +9,8 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Structure Learning** | Learn the model structure from data using the PC (constraint-based) algorithm |
+| **Structure Learning** | Learn the model structure from data: PC (constraint-based), Hill Climbing (score-based) and MMHC (hybrid, for large networks) |
+| **Network Scores** | Score a structure against data with BIC, AIC, BDeu or K2 |
 | **Parameter Learning** | Estimate model parameters (CPDs) from observed data using Maximum Likelihood Estimation |
 | **Probabilistic Inference** | Compute posterior distributions using Variable Elimination algorithm |
 | **Simulations** | Generate synthetic data from Bayesian Networks |
@@ -169,6 +170,64 @@ fmt.Printf("Predicted Rain: %v\n", predictions["Rain"])
 fmt.Printf("Predicted Sprinkler: %v\n", predictions["Sprinkler"])
 ```
 
+### Score-Based Structure Learning
+
+Score-based search asks which structure explains the data best, rather than which
+independencies the data shows. It scales far better than PC and is the route to take
+on a large network:
+
+```go
+import "github.com/JohnPierman/bngo/estimators"
+
+// Greedy hill climbing over edge additions, deletions and reversals, scored by BIC
+search := estimators.NewHillClimb(samples, nil)
+search.SetMaxIndegree(4) // optional: bound the size of the CPDs
+
+learnedDAG, _ := search.Estimate()
+
+// Max-Min Hill Climbing: narrow the candidate parents first, then search
+mmhc := estimators.NewMMHC(samples, nil)
+mmhc.SetAlpha(0.05)
+
+learnedDAG, _ = mmhc.Estimate()
+
+// The skeleton MMPC found is useful on its own
+skeleton := mmhc.LearnSkeleton()
+fmt.Printf("Candidate edges: %v\n", skeleton.Edges())
+```
+
+Any of the four scores can drive either search, and a score can also be used on its
+own to compare two structures you already have:
+
+```go
+bdeu, _ := estimators.NewBDeu(samples, nil, 10) // equivalent sample size 10
+_ = search.SetScore(bdeu)
+
+bic := estimators.NewBIC(samples, nil)
+total, _ := estimators.ScoreDAG(learnedDAG, bic)
+fmt.Printf("BIC of the learned network: %.2f\n", total)
+```
+
+**Which algorithm to use.** Measured on a sparse synthetic network where each variable
+depends on the two before it, 2000 rows, binary variables:
+
+| Variables | PC | Hill Climbing | MMHC |
+|----------:|---:|--------------:|-----:|
+| 25  | 2 m 27 s | 0.19 s | 1.3 s |
+| 40  | -        | 0.78 s | 4.3 s |
+| 80  | -        | 8.6 s  | 16.4 s |
+| 120 | -        | 41.1 s | 29.2 s |
+| 160 | -        | 2 m 10 s | 42.7 s |
+| 240 | -        | -      | 1 m 8 s |
+
+Hill climbing is the faster choice up to about a hundred variables, and the more
+accurate one throughout: on these runs it recovered 94-98% of the true edges against
+85-91% for MMHC. Past roughly a hundred variables the O(n^2) candidate changes of an
+unrestricted step start to dominate, MMHC overtakes it, and the gap keeps widening.
+MMHC is also the more cautious of the two, reporting essentially no edge that is not
+in the true network. PC was left out above 25 variables because it was already slower
+than either at that size, and less accurate.
+
 ## Package Structure
 
 ```
@@ -185,6 +244,11 @@ bngo/
 │   └── variable_elimination.go
 ├── estimators/         # Structure and parameter learning
 │   ├── pc.go
+│   ├── hill_climb.go
+│   ├── mmhc.go
+│   ├── score.go
+│   ├── columns.go
+│   ├── g_square.go
 │   └── independence_tests.go
 ├── utils/              # Utility functions
 │   └── data.go
@@ -296,6 +360,23 @@ reduced, _ := factor1.Reduce(evidence)
 - Orients edges based on v-structures
 - Configurable significance level (alpha)
 
+**Hill Climbing**
+- Score-based greedy search over edge additions, deletions and reversals
+- Prices one edge change by rescoring only the families it touches
+- Optional cap on the number of parents, and on the candidate parents of each variable
+- Terminates by construction: every accepted change strictly increases the score
+
+**MMHC (Max-Min Hill Climbing)**
+- Hybrid: MMPC narrows the candidate parents by local independence tests, then greedy
+  search picks and orients the edges among them
+- Restricting the search is what makes it suited to large networks
+- The MMPC skeleton is available on its own via `LearnSkeleton`
+
+**Network Scores**
+- BIC and AIC: penalised log likelihood
+- BDeu and K2: marginal likelihood under a Dirichlet prior
+- Every score is decomposable and caches the families it has already priced
+
 ### Data Utilities
 
 **DataFrame**
@@ -397,6 +478,8 @@ bngo supports both **discrete** and **continuous** variables:
 ### Independence Tests
 
 - **Chi-square test**: For discrete data (structure learning)
+- **G-squared test**: Likelihood ratio test for discrete data, with degrees of
+  freedom adjusted to the states actually observed in each stratum
 - **Pearson correlation**: For continuous data (partial implementation)
 - **Fisher's Z-test**: For correlation-based tests
 
@@ -414,10 +497,29 @@ bngo supports both **discrete** and **continuous** variables:
 - **PC Algorithm**: Constraint-based approach
 - Starts with complete graph and removes edges based on conditional independence
 - Orients edges using v-structures and propagation rules
+- **Hill Climbing**: Score-based greedy search
+- **MMHC**: Hybrid, restricting a greedy search to a skeleton learned from local tests
+
+Two properties of score-based search are worth knowing. A score can only tell apart
+structures that encode different independencies, so an edge direction is recovered
+only as far as the data determines it. And greedy search returns the first network
+that no single change improves, which need not be the best one: reaching a collision
+of two parents on one child can need two edges reversed at once, and reversing either
+alone does not improve the score. The undirected edges are the more dependable part
+of the answer.
+
+Observations are transposed into one slice per variable before learning starts.
+Structure learning reads every value of a variable thousands of times, and reaching
+those values through a map per row makes hashing rather than counting the dominant
+cost on a large network. Sufficient statistics are kept only for the parent
+configurations that actually occur, so a wide parent set costs memory in proportion
+to the sample rather than to the product of the cardinalities.
 
 ## Performance Tips
 
-1. **Structure Learning**: For large datasets, consider sampling or using parallel processing
+1. **Structure Learning**: On a network of more than about a hundred variables prefer
+   `MMHC` over `HillClimbSearch`, and both over `PC`. Capping the number of parents
+   with `SetMaxIndegree` bounds the size of the CPDs and the cost of scoring them
 2. **Inference**: The order of variable elimination affects performance - smaller elimination cliques are better
 3. **Simulation**: Use appropriate random seeds for reproducible results
 4. **Memory**: For very large networks, consider streaming data processing
@@ -456,8 +558,8 @@ Areas for contribution:
 - [x] Exact inference for mixed networks
 - [ ] Belief Propagation inference
 - [ ] MCMC sampling methods
-- [ ] Additional structure learning algorithms
-- [ ] Model scoring metrics (BIC, AIC)
+- [x] Additional structure learning algorithms (Hill Climbing, MMHC)
+- [x] Model scoring metrics (BIC, AIC, BDeu, K2)
 - [ ] Causal inference (do-calculus, interventions)
 - [ ] Model visualization
 - [ ] Parallel inference for large networks
