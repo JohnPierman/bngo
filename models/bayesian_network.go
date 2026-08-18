@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"sort"
 
+	"github.com/JohnPierman/bngo/categorical"
 	"github.com/JohnPierman/bngo/factors"
 	"github.com/JohnPierman/bngo/graph"
 )
@@ -31,6 +32,7 @@ type BayesianNetwork struct {
 	GaussianCPDs map[string]*factors.LinearGaussianCPD // For continuous variables
 	VariableType map[string]VariableType               // Track variable types
 	Cardinality  map[string]int                        // For discrete variables only
+	states       *categorical.Codebook                 // Labels of categorical variables, when declared
 }
 
 // NewBayesianNetwork creates a new Bayesian Network
@@ -46,6 +48,7 @@ func NewBayesianNetwork(edges [][2]string) (*BayesianNetwork, error) {
 		GaussianCPDs: make(map[string]*factors.LinearGaussianCPD),
 		VariableType: make(map[string]VariableType),
 		Cardinality:  make(map[string]int),
+		states:       categorical.NewCodebook(),
 	}, nil
 }
 
@@ -645,6 +648,7 @@ func (bn *BayesianNetwork) Copy() *BayesianNetwork {
 		GaussianCPDs: make(map[string]*factors.LinearGaussianCPD),
 		VariableType: make(map[string]VariableType),
 		Cardinality:  make(map[string]int),
+		states:       bn.copyStates(),
 	}
 
 	for k, v := range bn.CPDs {
@@ -668,6 +672,13 @@ func (bn *BayesianNetwork) Copy() *BayesianNetwork {
 
 // Fit learns the CPD parameters from data (discrete variables only)
 func (bn *BayesianNetwork) Fit(data []map[string]int) error {
+	return bn.fitEncoded(data, nil)
+}
+
+// fitEncoded learns every CPD from integer valued data. Entries in declared
+// override the cardinality read off the data, so a declared state the sample
+// never happens to contain keeps its column in the CPD.
+func (bn *BayesianNetwork) fitEncoded(data []map[string]int, declared map[string]int) error {
 	// Check if all variables are discrete
 	for _, node := range bn.DAG.Nodes() {
 		if bn.IsContinuous(node) {
@@ -677,7 +688,7 @@ func (bn *BayesianNetwork) Fit(data []map[string]int) error {
 
 	// For each node, learn its CPD from data
 	for _, node := range bn.Nodes() {
-		cpd, err := bn.learnCPD(node, data)
+		cpd, err := bn.learnCPDWithCardinality(node, data, declared)
 		if err != nil {
 			return err
 		}
@@ -742,68 +753,30 @@ func (bn *BayesianNetwork) FitMixed(data []Sample) error {
 	return nil
 }
 
-func (bn *BayesianNetwork) learnCPD(variable string, data []map[string]int) (*factors.TabularCPD, error) {
+// learnCPDWithCardinality estimates a CPD by maximum likelihood with Laplace
+// smoothing. Entries in declared override the cardinality that would be read off
+// the data, which is what stops a state the sample never happens to contain from
+// silently disappearing out of the CPD. A nil or partial declared map falls back
+// to the observed states. Samples holding a state outside the declared range are
+// skipped.
+func (bn *BayesianNetwork) learnCPDWithCardinality(variable string, data []map[string]int,
+	declared map[string]int) (*factors.TabularCPD, error) {
+
 	parents := bn.DAG.Parents(variable)
 	sort.Strings(parents)
 
-	// Determine cardinality from data
-	varCard := 0
-	evidenceCard := make(map[string]int)
-
-	for _, sample := range data {
-		if val, ok := sample[variable]; ok {
-			if val+1 > varCard {
-				varCard = val + 1
-			}
-		}
-		for _, p := range parents {
-			if val, ok := sample[p]; ok {
-				if val+1 > evidenceCard[p] {
-					evidenceCard[p] = val + 1
-				}
-			}
-		}
+	varCard, evidenceCard := observedCardinality(variable, parents, data)
+	varCard = declaredOrObserved(declared, variable, varCard)
+	for _, p := range parents {
+		evidenceCard[p] = declaredOrObserved(declared, p, evidenceCard[p])
 	}
 
-	// Count occurrences
 	numRows := 1
 	for _, p := range parents {
 		numRows *= evidenceCard[p]
 	}
 
-	counts := make([][]float64, numRows)
-	for i := range counts {
-		counts[i] = make([]float64, varCard)
-	}
-
-	// Count from data
-	for _, sample := range data {
-		// Calculate row index
-		rowIdx := 0
-		stride := 1
-		valid := true
-		for j := len(parents) - 1; j >= 0; j-- {
-			p := parents[j]
-			val, ok := sample[p]
-			if !ok {
-				valid = false
-				break
-			}
-			rowIdx += val * stride
-			stride *= evidenceCard[p]
-		}
-
-		if !valid {
-			continue
-		}
-
-		val, ok := sample[variable]
-		if !ok {
-			continue
-		}
-
-		counts[rowIdx][val]++
-	}
+	counts := countFamily(variable, parents, evidenceCard, numRows, varCard, data)
 
 	// Normalize to get probabilities (with Laplace smoothing)
 	values := make([][]float64, numRows)
@@ -820,6 +793,81 @@ func (bn *BayesianNetwork) learnCPD(variable string, data []map[string]int) (*fa
 	}
 
 	return factors.NewTabularCPD(variable, varCard, values, parents, evidenceCard)
+}
+
+// observedCardinality reads the number of states of a variable and of its
+// parents off the data, as one more than the largest state seen.
+func observedCardinality(variable string, parents []string,
+	data []map[string]int) (int, map[string]int) {
+
+	varCard := 0
+	evidenceCard := make(map[string]int)
+
+	for _, sample := range data {
+		if val, ok := sample[variable]; ok && val+1 > varCard {
+			varCard = val + 1
+		}
+		for _, p := range parents {
+			if val, ok := sample[p]; ok && val+1 > evidenceCard[p] {
+				evidenceCard[p] = val + 1
+			}
+		}
+	}
+
+	return varCard, evidenceCard
+}
+
+// declaredOrObserved prefers a declared cardinality over the observed one.
+func declaredOrObserved(declared map[string]int, variable string, observed int) int {
+	if card, ok := declared[variable]; ok && card > 0 {
+		return card
+	}
+	return observed
+}
+
+// countFamily counts how often each pair of parent configuration and state
+// occurs, skipping samples where the variable or any parent is unobserved.
+func countFamily(variable string, parents []string, evidenceCard map[string]int,
+	numRows, varCard int, data []map[string]int) [][]float64 {
+
+	counts := make([][]float64, numRows)
+	for i := range counts {
+		counts[i] = make([]float64, varCard)
+	}
+
+	for _, sample := range data {
+		val, ok := sample[variable]
+		if !ok || val < 0 || val >= varCard {
+			continue
+		}
+
+		rowIdx, ok := familyRowIndex(parents, evidenceCard, sample)
+		if !ok {
+			continue
+		}
+
+		counts[rowIdx][val]++
+	}
+
+	return counts
+}
+
+// familyRowIndex maps the parent values of a sample onto a row of the CPD table.
+func familyRowIndex(parents []string, evidenceCard map[string]int, sample map[string]int) (int, bool) {
+	rowIdx := 0
+	stride := 1
+
+	for j := len(parents) - 1; j >= 0; j-- {
+		p := parents[j]
+		val, ok := sample[p]
+		if !ok || val < 0 || val >= evidenceCard[p] {
+			return 0, false
+		}
+		rowIdx += val * stride
+		stride *= evidenceCard[p]
+	}
+
+	return rowIdx, true
 }
 
 // learnDiscreteCPDFromMixed learns discrete CPD from mixed data
